@@ -1,4 +1,4 @@
-import javafx.scene.paint.Color;
+import java.awt.Color;
 
 public class Square {
     public int x;
@@ -17,5 +17,9 @@ public class Square {
     public Piece getPiece() {
         return piece;
     }
-    
+    public String getPosition() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'getPosition'");
+    }
+
 }

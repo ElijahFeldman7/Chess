@@ -1,23 +1,32 @@
-public class Rook {
-    private String position;
-    private String type = "Rook";
-    private String color;
-    private boolean hasMoved = false;
-    private Square[][] board;
-    public Rook(String position) {
-        this.position = position;
-        this.type = "Rook";
+import java.awt.Color;
+
+public class Rook extends Piece {
+    public Rook(String position, Color color) {
+        super(position, color);
     }
 
+    @Override
     public String getType() {
-        return type;
+        return "Rook";
     }
 
-    public String getPosition() {
-        return position;
-    }
+    @Override
+    public boolean isValidMove(Square[][] board, String newPosition) {
+        int[] current = getCoordinates(position);
+        int[] target = getCoordinates(newPosition);
 
-    public void move(Square[][] board, String newPosition) {
-        this.position = newPosition;
+        // Check if the move is straight (either horizontal or vertical)
+        if (current[0] != target[0] && current[1] != target[1]) {
+            return false;
+        }
+
+        // Check if the path is clear
+        if (!isPathClear(board, current[0], current[1], target[0], target[1])) {
+            return false;
+        }
+
+        // Check if the target square is empty or contains an opponent's piece
+        Square targetSquare = board[target[0]][target[1]];
+        return targetSquare.getPiece() == null || isOpponentPiece(targetSquare);
     }
 }

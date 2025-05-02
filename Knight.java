@@ -1,28 +1,30 @@
-public class Knight {
-    private String position;
-    private String type = "Knight";
-    private String color;
-    private Square[][] board;
+import java.awt.Color;
+
+public class Knight extends Piece {
     public Knight(String position, Color color) {
-        this.color = color;
-        this.position = position;
-        this.type = "Knight";
+        super(position, color);
     }
 
+    @Override
     public String getType() {
-        return type;
+        return "Knight";
     }
 
-    public String getPosition() {
-        return position;
-    }
-
-    public void move(Square[][] board, String newPosition) {
-        this.position = newPosition;
-    }
+    @Override
     public boolean isValidMove(Square[][] board, String newPosition) {
-        // Implement the logic to check if the move is valid for a Knight
-        // Knights move in an "L" shape: two squares in one direction and then one square perpendicular
-        return true; // Placeholder, implement actual logic
+        int[] current = getCoordinates(position);
+        int[] target = getCoordinates(newPosition);
+
+        // Check if the move is in L-shape (2 squares in one direction, 1 square perpendicular)
+        int dx = Math.abs(target[0] - current[0]);
+        int dy = Math.abs(target[1] - current[1]);
+
+        if (!((dx == 2 && dy == 1) || (dx == 1 && dy == 2))) {
+            return false;
+        }
+
+        // Check if the target square is empty or contains an opponent's piece
+        Square targetSquare = board[target[0]][target[1]];
+        return targetSquare.getPiece() == null || isOpponentPiece(targetSquare);
     }
 }

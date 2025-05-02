@@ -1,22 +1,35 @@
-public class Bishop {
-    private String position;
-    private String type = "Bishop";
-    private String color;
-    private Square[][] board;
-    public Bishop(String position) {
-        this.position = position;
-        this.type = "Bishop";
+import java.awt.Color;
+
+public class Bishop extends Piece {
+    public Bishop(String position, Color color) {
+        super(position, color);
     }
 
+    @Override
     public String getType() {
-        return type;
+        return "Bishop";
     }
 
-    public String getPosition() {
-        return position;
-    }
+    @Override
+    public boolean isValidMove(Square[][] board, String newPosition) {
+        int[] current = getCoordinates(position);
+        int[] target = getCoordinates(newPosition);
 
-    public void move(Square[][] board, String newPosition) {
-        this.position = newPosition;
+        // Check if the move is diagonal
+        int dx = Math.abs(target[0] - current[0]);
+        int dy = Math.abs(target[1] - current[1]);
+
+        if (dx != dy) {
+            return false;
+        }
+
+        // Check if the path is clear
+        if (!isPathClear(board, current[0], current[1], target[0], target[1])) {
+            return false;
+        }
+
+        // Check if the target square is empty or contains an opponent's piece
+        Square targetSquare = board[target[0]][target[1]];
+        return targetSquare.getPiece() == null || isOpponentPiece(targetSquare);
     }
 }

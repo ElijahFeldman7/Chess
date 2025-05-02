@@ -1,31 +1,32 @@
-import javafx.scene.paint.Color;
+import java.awt.Color;
 
-public class King {
-    private String position;
-    private String type = "King";
-    private String color;
-    private boolean hasMoved = false;
-    private boolean isInCheck = false;
-    private boolean isInCheckMate = false;
-    private boolean isInStaleMate = false;
-    private boolean isInDraw = false;
-    private Square[][] board;
+public class King extends Piece {
+    public static boolean isInCheck;
 
     public King(String position, Color color) {
-        this.color = color.toString();
-        this.position = position;
-        this.type = "King";
+        super(position, color);
     }
 
+    @Override
     public String getType() {
-        return type;
+        return "King";
     }
 
-    public String getPosition() {
-        return position;
-    }
+    @Override
+    public boolean isValidMove(Square[][] board, String newPosition) {
+        int[] current = getCoordinates(position);
+        int[] target = getCoordinates(newPosition);
 
-    public void move(Square[][] board, String newPosition) {
-        this.position = newPosition;
+        // Check if the move is within one square in any direction
+        int dx = Math.abs(target[0] - current[0]);
+        int dy = Math.abs(target[1] - current[1]);
+
+        if (dx > 1 || dy > 1) {
+            return false;
+        }
+
+        // Check if the target square is empty or contains an opponent's piece
+        Square targetSquare = board[target[0]][target[1]];
+        return targetSquare.getPiece() == null || isOpponentPiece(targetSquare);
     }
 }
