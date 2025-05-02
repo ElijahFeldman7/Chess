@@ -18,8 +18,9 @@ public class Square {
         return piece;
     }
     public String getPosition() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getPosition'");
+        char file = (char) ('a' + x);
+        int rank = 8 - y;
+        return "" + file + rank;
     }
 
 }

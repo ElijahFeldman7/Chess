@@ -1,15 +1,20 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.*;
 
 public class ChessPanel extends JPanel {
     private ChessBoard chessBoard;
     private Piece selectedPiece;
+    private int mouseStartX, mouseStartY, mouseEndX, mouseEndY = 0;
+    private boolean dragging = false;
     private Square[][] squares;
 
     public ChessPanel() {
         chessBoard = new ChessBoard();
-        squares = chessBoard.board;
+        squares = chessBoard.board;       
         selectedPiece = null;
+        addMouseListener(mouseHandler);
+        addMouseMotionListener(mouseHandler);
     }
 
     public void selectPiece(int x, int y) {
@@ -20,7 +25,7 @@ public class ChessPanel extends JPanel {
             selectedPiece = null;
         }
     }
-
+    //teoman why is this protected?
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
@@ -41,4 +46,28 @@ public class ChessPanel extends JPanel {
             }
         }
     }
+    MouseAdapter mouseHandler = new MouseAdapter() {
+    public void mousePressed(MouseEvent e) {
+        mouseStartX = e.getX() / 60;
+        mouseStartY = e.getY() / 60;
+        if (mouseStartX >= 0 && mouseStartX < 8 && mouseStartY >= 0 && mouseStartY < 8) {
+            selectPiece(mouseStartX, mouseStartY);
+            dragging = true;
+        }
+    }
+    public void mouseReleased(MouseEvent e) {
+        mouseEndX = e.getX() / 60;
+        mouseEndY = e.getY() / 60;
+        if (dragging) {
+            dragging = false;
+            if (mouseEndX >= 0 && mouseEndX < 8 && mouseEndY >= 0 && mouseEndY < 8) {
+                selectPiece(mouseEndX, mouseEndY);
+            }
+        }
+        selectedPiece = null;
+        dragging = false;
+        repaint();
+
+    }
+   };
 }

@@ -9,7 +9,7 @@ public class ChessBoard {
                 board[i][j] = new Square(i, j, (i + j) % 2 == 0 ? Color.WHITE : Color.BLACK);
             }
         }
-        // Initialize pieces
+        // initialize pieces
         // Kings
         board[4][0].setPiece(new King("e1", Color.WHITE));
         board[4][7].setPiece(new King("e8", Color.BLACK));
