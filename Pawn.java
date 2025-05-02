@@ -1,4 +1,4 @@
-public class Pawn implements Piece {
+public class Pawn extends Piece {
     private String position;
     private String type = "Pawn";
 
