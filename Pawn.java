@@ -1,6 +1,10 @@
+
 public class Pawn extends Piece {
     private String position;
     private String type = "Pawn";
+    private String color;
+    private boolean hasMoved = false;
+    private Square[][] board;
 
     public Pawn(String position) {
         this.position = position;
@@ -21,5 +25,15 @@ public class Pawn extends Piece {
     public void move(Square[][] board, String newPosition) {
         this.position = newPosition;
     }
-    
+    public void validMoves(Square[][] board) {
+        if(King.isInCheck == true){
+            return;
+        }
+        if(color.equals("white)"){
+            if(!hasMoved) {
+                
+            }
+        }
+        
 }
+
