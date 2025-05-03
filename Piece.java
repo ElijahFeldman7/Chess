@@ -33,10 +33,15 @@ public abstract class Piece {
         }
     }
 
+    // converts "e4" -> 4, 3 (x, y array index)
     protected int[] getCoordinates(String position) {
+        if (position == null || position.length() != 2) {
+             System.err.println("Invalid position format: " + position);
+             return new int[]{-1, -1}; //error case
+        }
         int x = position.charAt(0) - 'a';
-        int y = 8 - Character.getNumericValue(position.charAt(1));
-        return new int[]{x, y};
+        int y = Character.getNumericValue(position.charAt(1)) - 1; // rank 1 is y=0, rank 8 is y=7
+        return new int[]{x, y}; // returns coords
     }
 
     protected boolean isInBounds(int x, int y) {
@@ -47,6 +52,7 @@ public abstract class Piece {
         return square.getPiece() != null && square.getPiece().getColor() != this.color;
     }
 
+    // checks if path is clear aside from target square
     protected boolean isPathClear(Square[][] board, int startX, int startY, int endX, int endY) {
         int dx = Integer.compare(endX, startX);
         int dy = Integer.compare(endY, startY);
@@ -54,12 +60,13 @@ public abstract class Piece {
         int y = startY + dy;
 
         while (x != endX || y != endY) {
+             if (!isInBounds(x, y)) return false; // path goes out of bounds
             if (board[x][y].getPiece() != null) {
-                return false;
+                return false; // blocked
             }
             x += dx;
             y += dy;
         }
-        return true;
+        return true; // path is clear
     }
 }

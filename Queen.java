@@ -15,21 +15,14 @@ public class Queen extends Piece {
         int[] current = getCoordinates(position);
         int[] target = getCoordinates(newPosition);
 
-        // Check if the move is diagonal or straight
-        int dx = Math.abs(target[0] - current[0]);
-        int dy = Math.abs(target[1] - current[1]);
+        boolean straight = (current[0] == target[0] || current[1] == target[1]);
+        boolean diagonal = (Math.abs(current[0] - target[0]) == Math.abs(current[1] - target[1]));
 
-        if (dx != dy && dx != 0 && dy != 0) {
-            return false;
-        }
+        if (!straight && !diagonal) return false;
 
-        // Check if the path is clear
-        if (!isPathClear(board, current[0], current[1], target[0], target[1])) {
-            return false;
-        }
+        if (!isPathClear(board, current[0], current[1], target[0], target[1])) return false;
 
-        // Check if the target square is empty or contains an opponent's piece
-        Square targetSquare = board[target[0]][target[1]];
-        return targetSquare.getPiece() == null || isOpponentPiece(targetSquare);
+        Piece destPiece = board[target[0]][target[1]].getPiece();
+        return destPiece == null || isOpponentPiece(board[target[0]][target[1]]);
     }
 }

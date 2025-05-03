@@ -15,18 +15,14 @@ public class Rook extends Piece {
         int[] current = getCoordinates(position);
         int[] target = getCoordinates(newPosition);
 
-        // Check if the move is straight (either horizontal or vertical)
-        if (current[0] != target[0] && current[1] != target[1]) {
-            return false;
-        }
+        // Must move in a straight line
+        if (current[0] != target[0] && current[1] != target[1]) return false;
 
-        // Check if the path is clear
-        if (!isPathClear(board, current[0], current[1], target[0], target[1])) {
-            return false;
-        }
+        // Check path is clear
+        if (!isPathClear(board, current[0], current[1], target[0], target[1])) return false;
 
-        // Check if the target square is empty or contains an opponent's piece
-        Square targetSquare = board[target[0]][target[1]];
-        return targetSquare.getPiece() == null || isOpponentPiece(targetSquare);
+        // Can't capture own piece
+        Piece destPiece = board[target[0]][target[1]].getPiece();
+        return destPiece == null || isOpponentPiece(board[target[0]][target[1]]);
     }
 }
