@@ -21,6 +21,7 @@ public class ChessPanel extends JPanel {
     private String winnerMessage = null;
     private Square[][] squares;
     private BufferedImage pieceSheet;
+    private JLabel statusLabel;
 
 
     private Color currentPlayer = Color.WHITE; // white starts
@@ -48,6 +49,9 @@ public class ChessPanel extends JPanel {
         JButton button = new JButton("Convert txt File to Position");
         button.addActionListener(new ConvertListener());
         add(button);
+        statusLabel = new JLabel("White's Turn");
+        statusLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        add(statusLabel);
     }
     // converts board array coordinates to like h8 or a1
     public static String positionToString(int x, int y) {
@@ -134,9 +138,6 @@ public class ChessPanel extends JPanel {
             drawPiece(g, selectedPiece, dragMouseX - dragOffsetX, dragMouseY - dragOffsetY, SQUARE_SIZE);
         }
 
-        // indicate current player turn
-        g.setColor(Color.BLACK);
-        g.drawString(currentPlayer == Color.WHITE ? "White's Turn" : "Black's Turn", 10, BOARD_Y_OFFSET - 10); //at top
     }
 
     // converts mouse pixel position to the respective square on the board
@@ -152,6 +153,69 @@ public class ChessPanel extends JPanel {
         }
         return new int[]{x, y};
     }
+    // Returns true if the given color's king is in check
+private boolean isKingInCheck(Color color) {
+    String kingPos = null;
+    for (int x = 0; x < 8; x++)
+        for (int y = 0; y < 8; y++) {
+            Piece p = squares[x][y].getPiece();
+            if (p instanceof King && p.getColor() == color)
+                kingPos = p.getPosition();
+        }
+    if (kingPos == null) return false;
+    for (int x = 0; x < 8; x++)
+        for (int y = 0; y < 8; y++) {
+            Piece p = squares[x][y].getPiece();
+            if (p != null && p.getColor() != color)
+                if (p.isValidMove(squares, kingPos))
+                    return true;
+        }
+    return false;
+}
+
+// Returns true if the given color has any legal move
+private boolean hasAnyLegalMove(Color color) {
+    for (int x = 0; x < 8; x++)
+        for (int y = 0; y < 8; y++) {
+            Piece p = squares[x][y].getPiece();
+            if (p != null && p.getColor() == color) {
+                String from = positionToString(x, y);
+                for (int tx = 0; tx < 8; tx++)
+                    for (int ty = 0; ty < 8; ty++) {
+                        String to = positionToString(tx, ty);
+                        if (p.isValidMove(squares, to)) {
+                            // Try the move on a copy
+                            Piece captured = squares[tx][ty].getPiece();
+                            squares[tx][ty].setPiece(p);
+                            squares[x][y].setPiece(null);
+                            String oldPos = p.position;
+                            p.position = to;
+                            boolean inCheck = isKingInCheck(color);
+                            // Undo move
+                            p.position = oldPos;
+                            squares[x][y].setPiece(p);
+                            squares[tx][ty].setPiece(captured);
+                            if (!inCheck) return true;
+                        }
+                    }
+            }
+        }
+    return false;
+}
+
+// Call this after every move
+private void checkGameEnd() {
+    if (isKingInCheck(currentPlayer) && !hasAnyLegalMove(currentPlayer)) {
+        winnerMessage = (currentPlayer == Color.WHITE ? "Black" : "White") + " wins by checkmate!";
+        statusLabel.setText(winnerMessage);
+    } else if (!isKingInCheck(currentPlayer) && !hasAnyLegalMove(currentPlayer)) {
+        winnerMessage = "Stalemate!";
+        statusLabel.setText(winnerMessage);
+    } else {
+        winnerMessage = null;
+        statusLabel.setText(currentPlayer == Color.WHITE ? "White's Turn" : "Black's Turn");
+    }
+}
     private void loadFEN(String fen) {
         for (int x = 0; x < 8; x++)
             for (int y = 0; y < 8; y++)
@@ -189,6 +253,7 @@ public class ChessPanel extends JPanel {
     MouseAdapter mouseHandler = new MouseAdapter() {
         @Override
         public void mousePressed(MouseEvent e) {
+            if (winnerMessage != null) return; // Don't allow moves after game ends
             int[] coords = getBoardCoords(e.getX(), e.getY());
             int x = coords[0], y = coords[1];
 
@@ -295,14 +360,11 @@ public class ChessPanel extends JPanel {
                                 squares[rookEndX][rookStartY].setPiece(rookToMove);
                                 rookToMove.position = positionToString(rookEndX, rookStartY);
                                 rookToMove.hasMoved = true;
-                                System.out.println("Castling Rook Moved!"); //debugging
-                            } else {
-                                 System.err.println("Error: Castling logic failed");
                             }
                         }
                         //alternate turn
                         currentPlayer = (currentPlayer == Color.WHITE) ? Color.BLACK : Color.WHITE;
-
+                        checkGameEnd();
                     } //end if valid move
                 } // end if target on board
             } // end if dragging
