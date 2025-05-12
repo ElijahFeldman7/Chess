@@ -3,15 +3,15 @@ import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 import javax.imageio.ImageIO;
 
 public class ChessPanel extends JPanel {
-    // in progress enPassant
-    public static String enPassantTarget = null;
     private ChessBoard chessBoard;
     private Piece selectedPiece;
     private int mouseStartX, mouseStartY = 0; // board array coords
@@ -22,8 +22,8 @@ public class ChessPanel extends JPanel {
     private BufferedImage pieceSheet;
 
     private Color currentPlayer = Color.WHITE; // white starts
-    private List<Piece> capturedWhitePieces = new ArrayList<>(); //we use an arraylist datastructure here because we are adding to the arraylist
-    private List<Piece> capturedBlackPieces = new ArrayList<>(); //out of the scope of our class
+    private List<Piece> capturedWhitePieces = new ArrayList<>(); //we use an arraylist here because we are adding to the data struc
+    private List<Piece> capturedBlackPieces = new ArrayList<>();
 
 
     private static final int SQUARE_SIZE = 60;
@@ -43,8 +43,11 @@ public class ChessPanel extends JPanel {
         addMouseListener(mouseHandler);
         addMouseMotionListener(mouseHandler);
         setPreferredSize(new Dimension(PREFERRED_WIDTH, PREFERRED_HEIGHT));
+        JButton button = new JButton("Convert txt File to Position");
+        button.addActionListener(new ConvertListener());
+        add(button);
     }
-    // converts board array coordinates [x, y] to a string representation ("a1", "h8")
+    // converts board array coordinates to like h8 or a1
     public static String positionToString(int x, int y) {
          if (x < 0 || x > 7 || y < 0 || y > 7) return null;
         char file = (char) ('a' + x);
@@ -147,7 +150,39 @@ public class ChessPanel extends JPanel {
         }
         return new int[]{x, y};
     }
-
+    private void loadFEN(String fen) {
+        for (int x = 0; x < 8; x++)
+            for (int y = 0; y < 8; y++)
+                squares[x][y].setPiece(null);
+    
+        String[] parts = fen.split(" ");
+        String[] ranks = parts[0].split("/");
+    
+        for (int y = 0; y < 8; y++) {
+            String rank = ranks[y];
+            int x = 0;
+            for (char c : rank.toCharArray()) {
+                if (Character.isDigit(c)) {
+                    x += c - '0';
+                } else {
+                    Color color = Character.isUpperCase(c) ? Color.WHITE : Color.BLACK;
+                    String pos = positionToString(x, 7 - y);
+                    Piece piece = null;
+                    switch (Character.toLowerCase(c)) {
+                        case 'p': piece = new Pawn(pos, color); break;
+                        case 'r': piece = new Rook(pos, color); break;
+                        case 'n': piece = new Knight(pos, color); break;
+                        case 'b': piece = new Bishop(pos, color); break;
+                        case 'q': piece = new Queen(pos, color); break;
+                        case 'k': piece = new King(pos, color); break;
+                    }
+                    squares[x][7 - y].setPiece(piece);
+                    x++;
+                }
+            }
+        }
+        repaint();
+    }
 
     MouseAdapter mouseHandler = new MouseAdapter() {
         @Override
@@ -195,10 +230,6 @@ public class ChessPanel extends JPanel {
                 int[] coords = getBoardCoords(e.getX(), e.getY());
                 int targetX = coords[0];
                 int targetY = coords[1];
-                //in progress doesn't work yet
-                String currentEnPassantTarget = enPassantTarget; // store before potentially changing it
-                enPassantTarget = null; // reset EP target by default for the next turn
-
                 if (targetX != -1) { // dropped on the board
                     String newPosition = positionToString(targetX, targetY);
                     Square targetSquare = squares[targetX][targetY];
@@ -213,35 +244,12 @@ public class ChessPanel extends JPanel {
                             if (pieceOnTargetSquare.getColor() != selectedPiece.getColor()) {
                                 capturedPiece = pieceOnTargetSquare;
                             } else {
-                                System.err.println("Error: Trying to capture own piece?");
                                 dragging = false;
                                 selectedPiece = null;
                                 repaint();
                                 return;
                             }
                         }
-
-                        //check for En Passant capture
-                        boolean isEnPassantCapture = false;
-                        if (selectedPiece instanceof Pawn &&
-                            Math.abs(targetX - mouseStartX) == 1 && // diagonal move
-                            targetSquare.getPiece() == null &&       // target square is empty
-                            currentEnPassantTarget != null &&
-                            currentEnPassantTarget.equals(newPosition)) // moved to the EP target square
-                        {
-                            int capturedPawnY = mouseStartY;
-                            int capturedPawnX = targetX;
-                            if(selectedPiece.isInBounds(capturedPawnX, capturedPawnY)) { 
-                                capturedPiece = squares[capturedPawnX][capturedPawnY].getPiece();
-                                squares[capturedPawnX][capturedPawnY].setPiece(null); // remove pawn captured EP
-                                isEnPassantCapture = true;
-                                System.out.println("En Passant Capture Executed!");
-                            } else {
-                                System.err.println("Error: en Passant capture logic failed boundary check.");
-                                capturedPiece = null;
-                            }
-                        }
-
                         // add captured piece to the array list
                         if (capturedPiece != null) {
                             if (capturedPiece.getColor() == Color.WHITE) {
@@ -255,14 +263,6 @@ public class ChessPanel extends JPanel {
                         targetSquare.setPiece(selectedPiece);             // place piece on new square
                         selectedPiece.position = newPosition;             // update piece's position
                         selectedPiece.hasMoved = true;                    // mark piece as moved
-                        // set potential new En Passant target
-                        if (selectedPiece instanceof Pawn && Math.abs(targetY - mouseStartY) == 2) { //if its a pawn and the pawn moves 2
-                            int enPassantRank = mouseStartY + (selectedPiece.getColor() == Color.WHITE ? 1 : -1); // rank to set EP target
-                            enPassantTarget = positionToString(targetX, enPassantRank); // set EP target square
-                            System.out.println("En Passant Target set to: " + enPassantTarget); //print for debugging
-                        }
-
-
                         // pawn promotion
                         if (selectedPiece instanceof Pawn) {
                             if ((selectedPiece.getColor() == Color.WHITE && targetY == 7) || // white reaches rank 8
@@ -271,10 +271,8 @@ public class ChessPanel extends JPanel {
                                 Queen promotedQueen = new Queen(newPosition, selectedPiece.getColor());
                                 promotedQueen.hasMoved = true; // promoted piece counts as having moved
                                 targetSquare.setPiece(promotedQueen);
-                                System.out.println("Pawn Promoted to Queen!"); //debugging
                             }
                         }
-
                         // castling
                         if (selectedPiece instanceof King && Math.abs(targetX - mouseStartX) == 2) {
                             int rookStartY = mouseStartY; // same rank as king
@@ -313,4 +311,22 @@ public class ChessPanel extends JPanel {
             repaint(); // redraw the board in its final state for the turn
         }
     };
+    private class ConvertListener implements ActionListener {
+        @Override
+        public void actionPerformed(ActionEvent e){
+            System.out.println("Button clicked!");
+            try {
+                Scanner scanner = new Scanner(new File("chess.txt"));
+                if (scanner.hasNextLine()) {
+                    String fen = scanner.nextLine();
+                    loadFEN(fen);
+                    scanner.close();
+                }
+
+            } catch (FileNotFoundException e1) {
+                System.out.println("file not found ");
+            }
+
+        }
+    }
 }

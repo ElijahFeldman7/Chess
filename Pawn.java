@@ -49,11 +49,7 @@ public class Pawn extends Piece {
             if (dest.getPiece() != null && isOpponentPiece(dest)) {
                 return true;
             }
-            String potentialEPCoord = ChessPanel.positionToString(target[0], target[1]);
-             if (ChessPanel.enPassantTarget != null
-                 && ChessPanel.enPassantTarget.equals(potentialEPCoord)
-                 && dest.getPiece() == null) { // must land on empty square for en passant
-                 // check if the piece being captured en passant is actually there
+             if (dest.getPiece() == null) { 
                  int capturedPawnY = current[1]; // same rank as the moving pawn started on
                  int capturedPawnX = target[0]; // same file as the target square
                  if (isInBounds(capturedPawnX, capturedPawnY)) {
