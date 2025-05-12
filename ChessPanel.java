@@ -22,8 +22,8 @@ public class ChessPanel extends JPanel {
     private BufferedImage pieceSheet;
 
     private Color currentPlayer = Color.WHITE; // white starts
-    private List<Piece> capturedWhitePieces = new ArrayList<>(); //we use an arraylist here because we are adding to the data struc
-    private List<Piece> capturedBlackPieces = new ArrayList<>();
+    private List<Piece> capturedWhitePieces = new ArrayList<>(); //we use an arraylist datastructure here because we are adding to the arraylist
+    private List<Piece> capturedBlackPieces = new ArrayList<>(); //out of the scope of our class
 
 
     private static final int SQUARE_SIZE = 60;
@@ -51,7 +51,7 @@ public class ChessPanel extends JPanel {
     public static String positionToString(int x, int y) {
          if (x < 0 || x > 7 || y < 0 || y > 7) return null;
         char file = (char) ('a' + x);
-        int rank = y + 1; 
+        int rank = y + 1;
         return "" + file + rank;
     }
 
@@ -76,7 +76,7 @@ public class ChessPanel extends JPanel {
         int sx = getPieceSheetX(piece.getType()); //sprite x and y position
         int sy = getPieceSheetY(piece.getColor());
         if (sx >= 0 && sy >= 0) {
-            BufferedImage pieceImg = pieceSheet.getSubimage( //creates a subimage of the sprite sheet 
+            BufferedImage pieceImg = pieceSheet.getSubimage( //creates a subimage of the sprite sheet
                 sx * PIECE_SHEET_PIECE_SIZE, sy * PIECE_SHEET_PIECE_SIZE, PIECE_SHEET_PIECE_SIZE, PIECE_SHEET_PIECE_SIZE
             );
             g.drawImage(pieceImg, xPx, yPx, size, size, null); //draws the image of the piece at given position
@@ -90,7 +90,7 @@ public class ChessPanel extends JPanel {
 
         // draw captured Black pieces at the top
         int capturedBlackX = 5;
-        for (Piece p : capturedBlackPieces) {  //for each piece p in arraylist captured black pieces 
+        for (Piece p : capturedBlackPieces) {  //for each piece p in arraylist captured black pieces
             drawPiece(g, p, capturedBlackX, 5, CAPTURED_PIECE_SIZE); //scaled smaller and draws it
             capturedBlackX += CAPTURED_PIECE_SIZE + 2; //increment by 2 + size
         }
@@ -132,9 +132,14 @@ public class ChessPanel extends JPanel {
             drawPiece(g, selectedPiece, dragMouseX - dragOffsetX, dragMouseY - dragOffsetY, SQUARE_SIZE);
         }
 
-        // indicate current player turn
+        // indicate current player turn or winner
         g.setColor(Color.BLACK);
-        g.drawString(currentPlayer == Color.WHITE ? "White's Turn" : "Black's Turn", 10, BOARD_Y_OFFSET - 10); //at top
+        if (winnerMessage != null) {
+            g.setFont(new Font("Arial", Font.BOLD, 20));
+            g.drawString(winnerMessage, 10, BOARD_Y_OFFSET - 10);
+        } else {
+            g.drawString(currentPlayer == Color.WHITE ? "White's Turn" : "Black's Turn", 10, BOARD_Y_OFFSET - 10);
+        }
     }
 
     // converts mouse pixel position to the respective square on the board
@@ -150,43 +155,12 @@ public class ChessPanel extends JPanel {
         }
         return new int[]{x, y};
     }
-    private void loadFEN(String fen) {
-        for (int x = 0; x < 8; x++)
-            for (int y = 0; y < 8; y++)
-                squares[x][y].setPiece(null);
-    
-        String[] parts = fen.split(" ");
-        String[] ranks = parts[0].split("/");
-    
-        for (int y = 0; y < 8; y++) {
-            String rank = ranks[y];
-            int x = 0;
-            for (char c : rank.toCharArray()) {
-                if (Character.isDigit(c)) {
-                    x += c - '0';
-                } else {
-                    Color color = Character.isUpperCase(c) ? Color.WHITE : Color.BLACK;
-                    String pos = positionToString(x, 7 - y);
-                    Piece piece = null;
-                    switch (Character.toLowerCase(c)) {
-                        case 'p': piece = new Pawn(pos, color); break;
-                        case 'r': piece = new Rook(pos, color); break;
-                        case 'n': piece = new Knight(pos, color); break;
-                        case 'b': piece = new Bishop(pos, color); break;
-                        case 'q': piece = new Queen(pos, color); break;
-                        case 'k': piece = new King(pos, color); break;
-                    }
-                    squares[x][7 - y].setPiece(piece);
-                    x++;
-                }
-            }
-        }
-        repaint();
-    }
+
 
     MouseAdapter mouseHandler = new MouseAdapter() {
         @Override
         public void mousePressed(MouseEvent e) {
+            if (winnerMessage != null) return; // Don't allow moves after game is over
             int[] coords = getBoardCoords(e.getX(), e.getY());
             int x = coords[0], y = coords[1];
 
@@ -234,10 +208,9 @@ public class ChessPanel extends JPanel {
                     String newPosition = positionToString(targetX, targetY);
                     Square targetSquare = squares[targetX][targetY];
 
-                    if (selectedPiece.isValidMove(squares, newPosition)) {
+                    if (selectedPiece.isValidMove(squares, newPosition) && isMoveLegal(squares, selectedPiece, newPosition)) {
                         Piece pieceOnTargetSquare = targetSquare.getPiece();
                         Piece capturedPiece = null; // track potential capture
-
 
                         // check for capture
                         if (pieceOnTargetSquare != null) {
@@ -250,6 +223,28 @@ public class ChessPanel extends JPanel {
                                 return;
                             }
                         }
+
+                        //check for En Passant capture
+                        boolean isEnPassantCapture = false;
+                        if (selectedPiece instanceof Pawn &&
+                            Math.abs(targetX - mouseStartX) == 1 && // diagonal move
+                            targetSquare.getPiece() == null &&       // target square is empty
+                            currentEnPassantTarget != null &&
+                            currentEnPassantTarget.equals(newPosition)) // moved to the EP target square
+                        {
+                            int capturedPawnY = mouseStartY;
+                            int capturedPawnX = targetX;
+                            if(selectedPiece.isInBounds(capturedPawnX, capturedPawnY)) { 
+                                capturedPiece = squares[capturedPawnX][capturedPawnY].getPiece();
+                                squares[capturedPawnX][capturedPawnY].setPiece(null); // remove pawn captured EP
+                                isEnPassantCapture = true;
+                                System.out.println("En Passant Capture Executed!");
+                            } else {
+                                System.err.println("Error: en Passant capture logic failed boundary check.");
+                                capturedPiece = null;
+                            }
+                        }
+
                         // add captured piece to the array list
                         if (capturedPiece != null) {
                             if (capturedPiece.getColor() == Color.WHITE) {
@@ -300,6 +295,9 @@ public class ChessPanel extends JPanel {
                         }
                         //alternate turn
                         currentPlayer = (currentPlayer == Color.WHITE) ? Color.BLACK : Color.WHITE;
+
+                        // Check for checkmate after the move
+                        checkForCheckmate();
 
                     } //end if valid move
                 } // end if target on board
