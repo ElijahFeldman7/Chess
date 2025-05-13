@@ -12,20 +12,16 @@ public class King extends Piece {
         return "King";
     }
 
-    // Helper method to check if a square is under attack by opponent pieces
     private boolean isSquareUnderAttack(Square[][] board, int x, int y) {
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 Piece piece = board[i][j].getPiece();
                 if (piece != null && piece.getColor() != this.color) {
-                    // Temporarily remove any piece at the target square to check if it can be attacked
                     Piece tempPiece = board[x][y].getPiece();
                     board[x][y].setPiece(null);
-
                     String targetPos = ChessPanel.positionToString(x, y);
                     boolean canAttack = piece.isValidMove(board, targetPos);
 
-                    // Restore the piece
                     board[x][y].setPiece(tempPiece);
 
                     if (canAttack) {
@@ -37,76 +33,65 @@ public class King extends Piece {
         return false;
     }
 
-    // Check if the king is in check
     public boolean isInCheck(Square[][] board) {
         int[] coords = getCoordinates(position);
         return isSquareUnderAttack(board, coords[0], coords[1]);
     }
 
-    // Check if the king is in checkmate
     public boolean isInCheckmate(Square[][] board) {
         if (!isInCheck(board)) {
             return false;
         }
 
-        // First try all possible king moves
         int[] coords = getCoordinates(position);
         int x = coords[0];
         int y = coords[1];
 
-        // Check all 8 possible squares around the king
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
-                if (dx == 0 && dy == 0) continue; // Skip current position
-
+                if (dx == 0 && dy == 0) continue; 
                 int newX = x + dx;
                 int newY = y + dy;
 
                 if (isInBounds(newX, newY)) {
                     String newPos = ChessPanel.positionToString(newX, newY);
                     if (isValidMove(board, newPos)) {
-                        // Temporarily move the king to check if it's still in check
                         Piece originalPiece = board[newX][newY].getPiece();
                         board[newX][newY].setPiece(this);
                         board[x][y].setPiece(null);
 
                         boolean stillInCheck = isInCheck(board);
 
-                        // Move the king back
                         board[x][y].setPiece(this);
                         board[newX][newY].setPiece(originalPiece);
 
                         if (!stillInCheck) {
-                            return false; // Found a valid move that gets out of check
+                            return false;
                         }
                     }
                 }
             }
         }
 
-        // If no king moves work, check if any other piece can block or capture the checking piece
         for (int i = 0; i < 8; i++) {
             for (int j = 0; j < 8; j++) {
                 Piece piece = board[i][j].getPiece();
                 if (piece != null && piece.getColor() == this.color && !(piece instanceof King)) {
-                    // Try all possible moves for this piece
                     for (int targetX = 0; targetX < 8; targetX++) {
                         for (int targetY = 0; targetY < 8; targetY++) {
                             String newPos = ChessPanel.positionToString(targetX, targetY);
                             if (piece.isValidMove(board, newPos)) {
-                                // Temporarily make the move
                                 Piece capturedPiece = board[targetX][targetY].getPiece();
                                 board[targetX][targetY].setPiece(piece);
                                 board[i][j].setPiece(null);
 
                                 boolean stillInCheck = isInCheck(board);
 
-                                // Undo the move
                                 board[i][j].setPiece(piece);
                                 board[targetX][targetY].setPiece(capturedPiece);
 
                                 if (!stillInCheck) {
-                                    return false; // Found a move that gets out of check
+                                    return false;
                                 }
                             }
                         }
@@ -115,7 +100,6 @@ public class King extends Piece {
             }
         }
 
-        // If we get here, no valid moves get the king out of check
         return true;
     }
 
