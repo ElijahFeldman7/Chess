@@ -188,7 +188,6 @@ public class ChessPanel extends JPanel {
             for (int y = 0; y < 8; y++) {
                 Piece p = squares[x][y].getPiece();
                 if (p != null && p.getColor() == color) {
-                    String from = positionToString(x, y);
                     for (int tx = 0; tx < 8; tx++)
                         for (int ty = 0; ty < 8; ty++) {
                             String to = positionToString(tx, ty);

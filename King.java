@@ -143,7 +143,6 @@ public class King extends Piece {
                     // Check if king is in check or would pass through check
                     if (!isInCheck(board)) {
                         int intermediateX = current[0] + step;
-                        String intermediatePos = ChessPanel.positionToString(intermediateX, current[1]);
                         Piece originalPiece = board[intermediateX][current[1]].getPiece();
                         board[intermediateX][current[1]].setPiece(this);
                         board[current[0]][current[1]].setPiece(null);
